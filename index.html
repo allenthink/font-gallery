@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>汉字字体寻迹 · Chinese Font Gallery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1409;
+  --paper: #f7f3eb;
+  --paper2: #efe9db;
+  --red: #c0392b;
+  --red-light: #fdf3f2;
+  --gold: #b8972a;
+  --muted: #7a6f5e;
+  --border: rgba(26,20,9,0.12);
+  --green: #27ae60;
+  --blue: #2471a3;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Noto Serif SC', 'Songti SC', 'SimSun', Georgia, serif;
+  min-height: 100vh;
+}
+
+/* 顶部色条 */
+.top-bar {
+  height: 4px;
+  background: linear-gradient(90deg, var(--red) 0%, var(--gold) 50%, var(--red) 100%);
+}
+
+/* 网格水印背景 */
+.page-bg {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(26,20,9,0.04) 39px, rgba(26,20,9,0.04) 40px),
+    repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(26,20,9,0.04) 39px, rgba(26,20,9,0.04) 40px);
+}
+
+.container {
+  position: relative; z-index: 1;
+  max-width: 980px; margin: 0 auto; padding: 0 24px 60px;
+}
+
+/* ===== Header ===== */
+header {
+  text-align: center;
+  padding: 44px 0 30px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 34px;
+  position: relative;
+}
+.site-title { font-size: 36px; font-weight: 600; letter-spacing: 0.15em; margin-bottom: 5px; }
+.site-title span { color: var(--red); }
+.site-sub { font-size: 12px; letter-spacing: 0.32em; color: var(--muted); font-weight: 300; }
+.seal {
+  display: inline-block;
+  border: 2px solid var(--red); color: var(--red);
+  font-size: 11px; padding: 3px 10px;
+  letter-spacing: 0.22em; margin-top: 13px;
+}
+.admin-entry {
+  position: absolute; right: 0; top: 44px;
+  background: none; border: 1px solid var(--border);
+  color: var(--muted); font-family: inherit;
+  font-size: 11px; padding: 6px 15px;
+  letter-spacing: 0.15em; cursor: pointer;
+  transition: all 0.15s;
+}
+.admin-entry:hover { border-color: var(--ink); color: var(--ink); }
+
+/* ===== 搜索区域 ===== */
+.search-section { margin-bottom: 30px; }
+.search-label {
+  font-size: 12px; letter-spacing: 0.25em;
+  color: var(--muted); margin-bottom: 10px; display: block;
+}
+.search-row { display: flex; gap: 10px; }
+.search-input {
+  flex: 1; background: white;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--red);
+  padding: 12px 18px; font-family: inherit;
+  font-size: 17px; color: var(--ink); outline: none;
+  letter-spacing: 0.1em; transition: box-shadow 0.2s;
+}
+.search-input::placeholder { color: #bbb; font-size: 14px; }
+.search-input:focus { box-shadow: 0 2px 12px rgba(192,57,43,0.1); }
+.search-btn {
+  background: var(--red); color: white; border: none;
+  padding: 0 26px; font-family: inherit;
+  font-size: 14px; letter-spacing: 0.22em; cursor: pointer;
+  transition: background 0.15s;
+}
+.search-btn:hover { background: #a93226; }
+
+.tag-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+.tag {
+  background: white; border: 1px solid var(--border);
+  color: var(--muted); font-size: 12px;
+  padding: 4px 13px; letter-spacing: 0.12em;
+  cursor: pointer; transition: all 0.15s; font-family: inherit;
+}
+.tag:hover { background: var(--red); border-color: var(--red); color: white; }
+.tag.active { background: var(--ink); border-color: var(--ink); color: white; }
+
+.result-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 18px; font-size: 12px; color: var(--muted);
+  letter-spacing: 0.1em; border-bottom: 1px solid var(--border); padding-bottom: 10px;
+}
+
+/* ===== 字体卡片 ===== */
+.font-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+.font-card {
+  background: white; border: 1px solid var(--border);
+  overflow: hidden; transition: transform 0.2s, box-shadow 0.2s;
+  animation: fadeUp 0.35s ease both;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.font-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(26,20,9,0.11); }
+
+.card-header {
+  background: var(--paper2); padding: 11px 16px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.font-name { font-size: 14px; font-weight: 600; letter-spacing: 0.08em; }
+.font-style-badge {
+  font-size: 10px; color: var(--red);
+  border: 1px solid var(--red); padding: 2px 7px; letter-spacing: 0.12em;
+}
+.preview-area {
+  padding: 24px 18px 18px; min-height: 110px;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.preview-text {
+  font-size: 40px; line-height: 1.3; text-align: center;
+  letter-spacing: 0.08em; transition: all 0.3s; font-weight: 300;
+}
+.card-footer {
+  padding: 10px 16px; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.tag-list { display: flex; gap: 5px; flex-wrap: wrap; }
+.mini-tag {
+  font-size: 10px; color: var(--muted);
+  background: var(--paper2); padding: 2px 6px; letter-spacing: 0.08em;
+}
+.dl-btn {
+  background: none; border: 1px solid var(--ink); color: var(--ink);
+  font-family: inherit; font-size: 10px; padding: 4px 12px;
+  letter-spacing: 0.18em; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.dl-btn:hover { background: var(--ink); color: var(--paper); }
+
+.card-detail {
+  display: none; border-top: 1px solid var(--border);
+  padding: 14px 16px; background: var(--paper);
+}
+.card-detail.open { display: block; animation: fadeDown 0.2s ease; }
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.detail-input {
+  width: 100%; border: 1px solid var(--border); background: white;
+  padding: 9px 13px; font-family: inherit; font-size: 15px;
+  color: var(--ink); outline: none; letter-spacing: 0.1em; margin-bottom: 10px;
+}
+.detail-input:focus { border-color: var(--red); }
+.size-row { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); }
+.size-row input[type=range] { flex: 1; accent-color: var(--red); }
+.font-desc { margin-top: 9px; font-size: 12px; color: var(--muted); line-height: 1.8; letter-spacing: 0.04em; }
+
+.empty-state { text-align: center; padding: 70px 20px; color: var(--muted); }
+.empty-char { font-size: 64px; opacity: 0.13; display: block; margin-bottom: 14px; }
+.empty-text { font-size: 13px; letter-spacing: 0.18em; }
+
+/* ===== 模态框 ===== */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 100; display: none; align-items: center; justify-content: center;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--paper); border-top: 3px solid var(--red);
+  padding: 30px 34px; width: 100%; max-width: 480px;
+  max-height: 90vh; overflow-y: auto;
+  position: relative; animation: modalIn 0.25s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(-14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.modal-title {
+  font-size: 17px; font-weight: 600; letter-spacing: 0.1em;
+  margin-bottom: 22px; padding-bottom: 13px; border-bottom: 1px solid var(--border);
+}
+.modal-close {
+  position: absolute; right: 18px; top: 18px;
+  background: none; border: none; font-size: 20px;
+  cursor: pointer; color: var(--muted); line-height: 1;
+}
+.modal-close:hover { color: var(--ink); }
+
+/* 登录 */
+.login-field { margin-bottom: 17px; }
+.login-field label { display: block; font-size: 12px; letter-spacing: 0.2em; color: var(--muted); margin-bottom: 7px; }
+.login-field input {
+  width: 100%; border: 1px solid var(--border);
+  border-left: 3px solid var(--red); background: white;
+  padding: 10px 14px; font-family: inherit; font-size: 15px;
+  color: var(--ink); outline: none;
+}
+.login-field input:focus { box-shadow: 0 0 0 2px rgba(192,57,43,0.12); }
+.login-err { font-size: 12px; color: var(--red); letter-spacing: 0.1em; margin-top: -10px; margin-bottom: 12px; display: none; }
+.login-note { margin-top: 13px; font-size: 11px; color: var(--muted); letter-spacing: 0.1em; text-align: center; line-height: 1.7; }
+
+.btn-primary {
+  width: 100%; background: var(--red); color: white; border: none;
+  padding: 12px; font-family: inherit; font-size: 13px;
+  letter-spacing: 0.25em; cursor: pointer; margin-top: 8px; transition: background 0.15s;
+}
+.btn-primary:hover { background: #a93226; }
+.btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+.btn-secondary {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  font-family: inherit; font-size: 12px; padding: 7px 16px;
+  letter-spacing: 0.15em; cursor: pointer; transition: all 0.15s;
+}
+.btn-secondary:hover { border-color: var(--ink); color: var(--ink); }
+
+/* 管理后台 */
+.admin-modal .modal { max-width: 780px; }
+.admin-tabs {
+  display: flex; gap: 0;
+  border-bottom: 2px solid var(--border); margin-bottom: 22px;
+}
+.admin-tab {
+  background: none; border: none; font-family: inherit;
+  font-size: 13px; padding: 10px 20px; letter-spacing: 0.15em;
+  cursor: pointer; color: var(--muted);
+  border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s;
+}
+.admin-tab.active { color: var(--red); border-bottom-color: var(--red); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* 字体列表条目 */
+.font-list-item {
+  border: 1px solid var(--border); background: white;
+  padding: 14px 16px; margin-bottom: 10px;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.fli-preview {
+  font-size: 28px; line-height: 1; width: 48px;
+  text-align: center; flex-shrink: 0; padding-top: 2px;
+}
+.fli-body { flex: 1; min-width: 0; }
+.fli-name { font-size: 14px; font-weight: 600; letter-spacing: 0.08em; margin-bottom: 8px; }
+.fli-field { margin-bottom: 8px; }
+.fli-field label { font-size: 11px; letter-spacing: 0.18em; color: var(--muted); display: block; margin-bottom: 4px; }
+.fli-field input, .fli-field textarea {
+  width: 100%; border: 1px solid var(--border); background: var(--paper);
+  padding: 7px 10px; font-family: inherit; font-size: 13px;
+  color: var(--ink); outline: none; resize: vertical;
+}
+.fli-field input:focus, .fli-field textarea:focus { border-color: var(--red); }
+.fli-actions { display: flex; gap: 8px; margin-top: 8px; }
+.btn-save {
+  background: var(--green); color: white; border: none;
+  font-family: inherit; font-size: 11px; padding: 5px 14px;
+  letter-spacing: 0.15em; cursor: pointer; transition: opacity 0.15s;
+}
+.btn-save:hover { opacity: 0.85; }
+.btn-del {
+  background: none; border: 1px solid var(--red); color: var(--red);
+  font-family: inherit; font-size: 11px; padding: 5px 14px;
+  letter-spacing: 0.15em; cursor: pointer; transition: all 0.15s;
+}
+.btn-del:hover { background: var(--red); color: white; }
+
+/* 上传区 */
+.upload-zone {
+  border: 2px dashed var(--border); padding: 36px 24px;
+  text-align: center; cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 18px; background: white;
+}
+.upload-zone:hover, .upload-zone.drag {
+  border-color: var(--red); background: var(--red-light);
+}
+.upload-icon { font-size: 34px; opacity: 0.22; display: block; margin-bottom: 10px; }
+.upload-hint { font-size: 13px; color: var(--muted); letter-spacing: 0.1em; line-height: 1.9; }
+.upload-hint strong { color: var(--red); }
+
+.upload-queue { margin-top: 12px; }
+.queue-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; background: white;
+  border: 1px solid var(--border); margin-bottom: 7px;
+}
+.qi-name { flex: 1; font-size: 13px; letter-spacing: 0.05em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qi-size { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.qi-status { font-size: 11px; padding: 3px 9px; letter-spacing: 0.1em; white-space: nowrap; }
+.qi-status.pending  { color: var(--muted);  border: 1px solid var(--border); }
+.qi-status.uploading{ color: var(--blue);   border: 1px solid var(--blue); }
+.qi-status.done     { color: var(--green);  border: 1px solid var(--green); }
+.qi-status.error    { color: var(--red);    border: 1px solid var(--red); }
+.qi-rm { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 17px; line-height: 1; flex-shrink: 0; }
+.qi-rm:hover { color: var(--red); }
+
+/* GitHub 设置 */
+.gh-field { margin-bottom: 16px; }
+.gh-field label { font-size: 12px; letter-spacing: 0.18em; color: var(--muted); display: block; margin-bottom: 6px; }
+.gh-field input {
+  width: 100%; border: 1px solid var(--border);
+  border-left: 3px solid var(--gold); background: white;
+  padding: 9px 13px; font-family: inherit; font-size: 13px;
+  color: var(--ink); outline: none;
+}
+.gh-field input:focus { box-shadow: 0 0 0 2px rgba(184,151,42,0.15); }
+.gh-hint { font-size: 11px; color: var(--muted); letter-spacing: 0.04em; margin-top: 4px; line-height: 1.7; }
+.gh-status {
+  padding: 10px 14px; font-size: 12px; letter-spacing: 0.1em;
+  margin-bottom: 16px; display: none; line-height: 1.6;
+}
+.gh-status.ok   { background: #eaf7ef; color: #1e8449; border-left: 3px solid var(--green); display: block; }
+.gh-status.err  { background: #fdf3f2; color: var(--red); border-left: 3px solid var(--red); display: block; }
+.gh-status.info { background: #eaf3fb; color: var(--blue); border-left: 3px solid var(--blue); display: block; }
+
+/* Toast 提示 */
+.toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: var(--paper);
+  font-size: 13px; padding: 10px 24px; letter-spacing: 0.12em;
+  z-index: 200; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+
+footer {
+  text-align: center; padding: 28px 0 0;
+  border-top: 1px solid var(--border); margin-top: 44px;
+  font-size: 11px; color: var(--muted); letter-spacing: 0.18em;
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar"></div>
+<div class="page-bg"></div>
+<div class="toast" id="toast"></div>
+
+<div class="container">
+  <header>
+    <div class="site-title">汉字<span>字体</span>寻迹</div>
+    <div class="site-sub">C H I N E S E &nbsp; F O N T &nbsp; G A L L E R Y</div>
+    <div class="seal">典藏字库</div>
+    <button class="admin-entry" onclick="openLogin()">管理后台</button>
+  </header>
+
+  <div class="search-section">
+    <span class="search-label">输入汉字预览 · 输入风格名称搜索字体</span>
+    <div class="search-row">
+      <input class="search-input" id="mainInput" placeholder="输入汉字或风格（篆书、楷书、古典…）">
+      <button class="search-btn" onclick="doSearch()">检索</button>
+    </div>
+    <div class="tag-row" id="tagRow"></div>
+  </div>
+
+  <div class="result-bar">
+    <span id="resultCount">共 0 款字体</span>
+    <span>点击卡片展开自定义预览</span>
+  </div>
+  <div class="font-grid" id="fontGrid"></div>
+  <div class="empty-state" id="emptyState" style="display:none">
+    <span class="empty-char">文</span>
+    <div class="empty-text">未找到匹配的字体，请尝试其他关键词</div>
+  </div>
+
+  <footer>字体版权归原作者所有 &nbsp;·&nbsp; 本站仅供预览与下载</footer>
+</div>
+
+<!-- ===== 登录模态框 ===== -->
+<div class="modal-bg" id="loginModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('loginModal')">×</button>
+    <div class="modal-title">管理员登录</div>
+    <div class="login-field">
+      <label>管理密码</label>
+      <input type="password" id="loginPwd" placeholder="请输入管理密码"
+             onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-err" id="loginErr">密码错误，请重试</div>
+    <button class="btn-primary" onclick="doLogin()">登录</button>
+    <div class="login-note">
+      默认密码：<strong>admin123</strong><br>
+      首次使用请登录后在「GitHub 设置」中修改密码
+    </div>
+  </div>
+</div>
+
+<!-- ===== 管理后台模态框 ===== -->
+<div class="modal-bg admin-modal" id="adminModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('adminModal')">×</button>
+    <div class="modal-title">字体库管理后台</div>
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="switchTab('tabFonts',this)">字体管理</button>
+      <button class="admin-tab" onclick="switchTab('tabUpload',this)">上传字体</button>
+      <button class="admin-tab" onclick="switchTab('tabGithub',this)">GitHub 设置</button>
+    </div>
+
+    <!-- Tab 1：字体管理 -->
+    <div class="tab-panel active" id="tabFonts">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+        <button class="btn-secondary" onclick="addNewFont()">+ 新增字体条目</button>
+      </div>
+      <div id="fontListAdmin"></div>
+    </div>
+
+    <!-- Tab 2：上传字体 -->
+    <div class="tab-panel" id="tabUpload">
+      <div class="gh-status info" style="display:block;margin-bottom:16px;">
+        上传的字体文件将通过 GitHub API 推送到仓库的 <strong>fonts/</strong> 目录，并自动更新 <strong>fonts.json</strong>。请先在「GitHub 设置」中完成配置。
+      </div>
+      <div class="upload-zone" id="uploadZone"
+           onclick="document.getElementById('fileInput').click()"
+           ondragover="dragOver(event)"
+           ondragleave="dragLeave(event)"
+           ondrop="dropFiles(event)">
+        <span class="upload-icon">⬆</span>
+        <div class="upload-hint">
+          点击或将 TTF / OTF 文件拖拽到此处<br>
+          <strong>支持批量上传</strong>，文件将存入仓库 fonts/ 目录
+        </div>
+      </div>
+      <input type="file" id="fileInput" accept=".ttf,.otf" multiple
+             onchange="queueFiles(this.files)" style="display:none">
+      <div class="upload-queue" id="uploadQueue"></div>
+      <button class="btn-primary" id="uploadBtn" onclick="startUpload()"
+              style="margin-top:6px;display:none">开始上传到 GitHub 仓库</button>
+    </div>
+
+    <!-- Tab 3：GitHub 设置 -->
+    <div class="tab-panel" id="tabGithub">
+      <div class="gh-status" id="ghStatus"></div>
+      <div class="gh-field">
+        <label>GitHub 用户名</label>
+        <input type="text" id="ghUser" placeholder="例：yourname">
+        <div class="gh-hint">你的 GitHub 账号用户名（不是邮箱）</div>
+      </div>
+      <div class="gh-field">
+        <label>仓库名称</label>
+        <input type="text" id="ghRepo" placeholder="例：font-gallery">
+        <div class="gh-hint">存放此网站和字体文件的仓库名</div>
+      </div>
+      <div class="gh-field">
+        <label>Personal Access Token（PAT）</label>
+        <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+        <div class="gh-hint">
+          获取路径：GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)<br>
+          生成时勾选 <strong>repo</strong> 权限。Token 仅保存在本地浏览器，不会上传。
+        </div>
+      </div>
+      <div class="gh-field">
+        <label>修改管理员密码</label>
+        <input type="password" id="newPwd" placeholder="留空则不修改">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:6px;">
+        <button class="btn-primary" style="flex:1" onclick="saveGhSettings()">保存设置</button>
+        <button class="btn-secondary" onclick="testGhConnection()">测试连接</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  状态
+// ============================================================
+let FONTS      = JSON.parse(localStorage.getItem('fonts_data') || '[]');
+let GH         = JSON.parse(localStorage.getItem('gh_config')  || '{}');
+let ADMIN_PWD  = localStorage.getItem('admin_pwd') || 'admin123';
+let activeTag  = null;
+let previewText = '';
+let uploadQueue = [];
+
+function saveFonts() {
+  localStorage.setItem('fonts_data', JSON.stringify(FONTS));
+}
+
+// ============================================================
+//  Toast
+// ============================================================
+function toast(msg, dur = 2400) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// ============================================================
+//  模态框
+// ============================================================
+function openLogin() {
+  document.getElementById('loginPwd').value = '';
+  document.getElementById('loginErr').style.display = 'none';
+  document.getElementById('loginModal').classList.add('open');
+  setTimeout(() => document.getElementById('loginPwd').focus(), 120);
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+function doLogin() {
+  const pwd = document.getElementById('loginPwd').value;
+  if (pwd === ADMIN_PWD) {
+    closeModal('loginModal');
+    openAdmin();
+  } else {
+    document.getElementById('loginErr').style.display = 'block';
+    document.getElementById('loginPwd').value = '';
+    document.getElementById('loginPwd').focus();
+  }
+}
+function openAdmin() {
+  renderFontListAdmin();
+  loadGhFields();
+  document.getElementById('adminModal').classList.add('open');
+}
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// 点击背景关闭
+document.querySelectorAll('.modal-bg').forEach(bg => {
+  bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });
+});
+
+// ============================================================
+//  前台：标签 + 卡片
+// ============================================================
+function getAllTags() {
+  return [...new Set(FONTS.flatMap(f => f.tags || []))].slice(0, 16);
+}
+
+function renderTags() {
+  const tagRow = document.getElementById('tagRow');
+  tagRow.innerHTML = '';
+  getAllTags().forEach(tag => {
+    const btn = document.createElement('button');
+    btn.className = 'tag' + (activeTag === tag ? ' active' : '');
+    btn.textContent = tag;
+    btn.dataset.tag = tag;
+    btn.onclick = () => {
+      activeTag = (activeTag === tag) ? null : tag;
+      document.querySelectorAll('.tag').forEach(b =>
+        b.classList.toggle('active', b.dataset.tag === activeTag)
+      );
+      renderCards();
+    };
+    tagRow.appendChild(btn);
+  });
+}
+
+const STYLE_WORDS = ['篆书','楷书','隶书','行书','草书','宋体','黑体','魏碑',
+                     '古典','现代','扁平','古风','印章','书法','碑文','正楷','金文'];
+
+function renderCards() {
+  const q     = document.getElementById('mainInput').value.trim();
+  const grid  = document.getElementById('fontGrid');
+  const empty = document.getElementById('emptyState');
+  const countEl = document.getElementById('resultCount');
+  const isStyleQuery = q && STYLE_WORDS.some(w => q.includes(w));
+
+  const filtered = FONTS.filter(font => {
+    if (activeTag && !(font.tags || []).includes(activeTag)) return false;
+    if (isStyleQuery) {
+      const match =
+        (font.tags || []).some(t => q.includes(t)) ||
+        q.includes(font.style || '') ||
+        (font.name || '').includes(q);
+      if (!match) return false;
+    }
+    return true;
+  });
+
+  grid.innerHTML = '';
+  if (filtered.length === 0) {
+    empty.style.display = 'block';
+    countEl.textContent = '未找到匹配字体';
+    return;
+  }
+  empty.style.display = 'none';
+  countEl.textContent = activeTag
+    ? `"${activeTag}" 相关 ${filtered.length} 款`
+    : `共 ${filtered.length} 款字体`;
+
+  filtered.forEach((font, i) => {
+    const displayText = previewText || font.preview || font.name;
+    const card = document.createElement('div');
+    card.className = 'font-card';
+    card.dataset.id = font.id;
+    card.style.animationDelay = (i * 0.07) + 's';
+
+    // 注入字体 @font-face（若有 base64）
+    if (font.base64 && !document.getElementById('ff-' + font.id)) {
+      const s = document.createElement('style');
+      s.id = 'ff-' + font.id;
+      s.textContent = `@font-face{font-family:'ff_${font.id}';src:url('${font.base64}');}`;
+      document.head.appendChild(s);
+    }
+    const ffStyle = font.base64 ? `font-family:'ff_${font.id}',serif` : '';
+
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="font-name">${escHtml(font.name)}</span>
+        <span class="font-style-badge">${escHtml(font.style || '')}</span>
+      </div>
+      <div class="preview-area" onclick="toggleDetail('${font.id}')">
+        <div class="preview-text" style="${ffStyle}">${escHtml(displayText)}</div>
+      </div>
+      <div class="card-footer">
+        <div class="tag-list">
+          ${(font.tags || []).slice(0, 3).map(t =>
+            `<span class="mini-tag">${escHtml(t)}</span>`).join('')}
+        </div>
+        <button class="dl-btn"
+          onclick="event.stopPropagation();downloadFont('${font.id}')">下载字体</button>
+      </div>
+      <div class="card-detail" id="detail-${font.id}">
+        <input class="detail-input" placeholder="在此输入文字实时预览…"
+               value="${escAttr(previewText)}"
+               oninput="updateCardPreview('${font.id}',this.value)">
+        <div class="size-row">
+          <span>字号</span>
+          <input type="range" min="20" max="80" value="40"
+                 oninput="resizeCard('${font.id}',this.value)">
+          <span id="size-${font.id}">40px</span>
+        </div>
+        ${font.desc ? `<div class="font-desc">${escHtml(font.desc)}</div>` : ''}
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function toggleDetail(id) {
+  const d = document.getElementById('detail-' + id);
+  d.classList.toggle('open');
+  if (d.classList.contains('open')) d.querySelector('.detail-input').focus();
+}
+function updateCardPreview(id, text) {
+  const card = document.querySelector(`[data-id="${id}"]`);
+  if (!card) return;
+  const font = FONTS.find(f => f.id === id);
+  card.querySelector('.preview-text').textContent = text || (font ? font.preview : '');
+}
+function resizeCard(id, size) {
+  const card = document.querySelector(`[data-id="${id}"]`);
+  if (card) {
+    card.querySelector('.preview-text').style.fontSize = size + 'px';
+    document.getElementById('size-' + id).textContent = size + 'px';
+  }
+}
+function downloadFont(id) {
+  const font = FONTS.find(f => f.id === id);
+  if (!font) return;
+  if (font.base64) {
+    const a = document.createElement('a');
+    a.href = font.base64;
+    a.download = (font.file || id + '.ttf').split('/').pop();
+    a.click();
+  } else if (GH.user && GH.repo && font.file) {
+    window.open(
+      `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/main/${font.file}`,
+      '_blank'
+    );
+  } else {
+    toast('字体文件尚未上传，请在管理后台上传');
+  }
+}
+function doSearch() {
+  previewText = '';
+  renderCards();
+}
+
+// 输入框监听
+document.getElementById('mainInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+document.getElementById('mainInput').addEventListener('input', function () {
+  const v = this.value;
+  if (!STYLE_WORDS.some(w => v.includes(w))) {
+    // 纯汉字预览：不筛选，只更新已渲染卡片文字
+    previewText = v;
+    document.querySelectorAll('.font-card').forEach(card => {
+      const id   = card.dataset.id;
+      const font = FONTS.find(f => f.id === id);
+      card.querySelector('.preview-text').textContent = v || (font ? font.preview : '');
+      const di = card.querySelector('.detail-input');
+      if (di) di.value = v;
+    });
+  }
+});
+
+// 小工具
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) { return escHtml(s); }
+
+// ============================================================
+//  管理后台：字体列表
+// ============================================================
+function renderFontListAdmin() {
+  const container = document.getElementById('fontListAdmin');
+  if (FONTS.length === 0) {
+    container.innerHTML =
+      '<div style="text-align:center;padding:36px;color:var(--muted);font-size:13px;letter-spacing:0.1em">' +
+      '暂无字体条目，请在「上传字体」中添加，或点击「新增字体条目」手动录入</div>';
+    return;
+  }
+  container.innerHTML = FONTS.map(font => `
+    <div class="font-list-item" id="fli-${font.id}">
+      <div class="fli-preview" style="${font.base64 ? `font-family:'ff_${font.id}',serif` : ''}">文</div>
+      <div class="fli-body">
+        <div class="fli-name">
+          ${escHtml(font.name)}
+          <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">
+            ${escHtml(font.file || '未关联文件')}
+          </span>
+        </div>
+        <div class="fli-field">
+          <label>显示名称</label>
+          <input type="text" value="${escAttr(font.name)}" id="fn-name-${font.id}">
+        </div>
+        <div class="fli-field">
+          <label>风格分类</label>
+          <input type="text" value="${escAttr(font.style || '')}" id="fn-style-${font.id}"
+                 placeholder="如：楷书、篆书、隶书">
+        </div>
+        <div class="fli-field">
+          <label>搜索关键词（中文逗号或空格分隔）</label>
+          <input type="text" value="${escAttr((font.tags || []).join('，'))}"
+                 id="fn-tags-${font.id}"
+                 placeholder="篆书，古典，金文，古风，印章">
+        </div>
+        <div class="fli-field">
+          <label>预览默认文字</label>
+          <input type="text" value="${escAttr(font.preview || '')}"
+                 id="fn-prev-${font.id}" placeholder="如：永字八法">
+        </div>
+        <div class="fli-field">
+          <label>字体简介</label>
+          <input type="text" value="${escAttr(font.desc || '')}"
+                 id="fn-desc-${font.id}" placeholder="简短描述这款字体的特点与适用场景">
+        </div>
+        <div class="fli-actions">
+          <button class="btn-save" onclick="saveFont('${font.id}')">保存</button>
+          <button class="btn-del"  onclick="deleteFont('${font.id}')">删除条目</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function saveFont(id) {
+  const i = FONTS.findIndex(f => f.id === id);
+  if (i < 0) return;
+  const tagsRaw = document.getElementById('fn-tags-' + id).value;
+  FONTS[i] = {
+    ...FONTS[i],
+    name:    document.getElementById('fn-name-'  + id).value.trim(),
+    style:   document.getElementById('fn-style-' + id).value.trim(),
+    tags:    tagsRaw.split(/[,，、\s]+/).map(t => t.trim()).filter(Boolean),
+    preview: document.getElementById('fn-prev-'  + id).value.trim(),
+    desc:    document.getElementById('fn-desc-'  + id).value.trim(),
+  };
+  saveFonts();
+  renderTags();
+  renderCards();
+  toast('已保存「' + FONTS[i].name + '」');
+  pushFontsJson();
+}
+
+function deleteFont(id) {
+  const font = FONTS.find(f => f.id === id);
+  if (!font) return;
+  if (!confirm(`确认删除「${font.name}」条目？\n（不会删除 GitHub 仓库中的字体文件）`)) return;
+  FONTS = FONTS.filter(f => f.id !== id);
+  saveFonts();
+  renderFontListAdmin();
+  renderTags();
+  renderCards();
+  toast('已删除条目');
+  pushFontsJson();
+}
+
+function addNewFont() {
+  const id = 'font_' + Date.now();
+  FONTS.push({ id, name: '新字体', style: '', tags: [], preview: '汉字预览', file: '', desc: '' });
+  saveFonts();
+  renderFontListAdmin();
+  // 滚动到最新条目
+  setTimeout(() => {
+    const el = document.getElementById('fli-' + id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  }, 100);
+  toast('已新增条目，请填写信息后保存');
+}
+
+// ============================================================
+//  管理后台：上传
+// ============================================================
+function dragOver(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.add('drag');
+}
+function dragLeave() {
+  document.getElementById('uploadZone').classList.remove('drag');
+}
+function dropFiles(e) {
+  e.preventDefault(); dragLeave();
+  queueFiles(e.dataTransfer.files);
+}
+function queueFiles(files) {
+  Array.from(files).forEach(file => {
+    if (!file.name.match(/\.(ttf|otf)$/i)) {
+      toast('仅支持 TTF / OTF 格式'); return;
+    }
+    if (uploadQueue.find(q => q.file.name === file.name)) return;
+    uploadQueue.push({ file, status: 'pending' });
+  });
+  renderQueue();
+  document.getElementById('uploadBtn').style.display = uploadQueue.length ? 'block' : 'none';
+}
+function renderQueue() {
+  const el = document.getElementById('uploadQueue');
+  el.innerHTML = uploadQueue.map((item, i) => `
+    <div class="queue-item">
+      <span class="qi-name">${escHtml(item.file.name)}</span>
+      <span class="qi-size">${(item.file.size / 1024).toFixed(0)} KB</span>
+      <span class="qi-status ${item.status}">
+        ${{ pending: '待上传', uploading: '上传中', done: '完成', error: '失败' }[item.status]}
+      </span>
+      ${item.status === 'pending'
+        ? `<button class="qi-rm" onclick="removeQueue(${i})">×</button>`
+        : ''}
+    </div>`).join('');
+}
+function removeQueue(i) {
+  uploadQueue.splice(i, 1); renderQueue();
+  if (!uploadQueue.length) document.getElementById('uploadBtn').style.display = 'none';
+}
+
+async function startUpload() {
+  if (!GH.token || !GH.user || !GH.repo) {
+    toast('请先在「GitHub 设置」中配置 Token 和仓库');
+    switchTab('tabGithub', document.querySelectorAll('.admin-tab')[2]);
+    return;
+  }
+  const btn = document.getElementById('uploadBtn');
+  btn.disabled = true; btn.textContent = '上传中，请勿关闭…';
+
+  for (let i = 0; i < uploadQueue.length; i++) {
+    const item = uploadQueue[i];
+    if (item.status === 'done') continue;
+    item.status = 'uploading'; renderQueue();
+    try {
+      const dataUrl    = await fileToDataUrl(item.file);
+      const pureBase64 = dataUrl.split(',')[1];
+      const path       = `fonts/${item.file.name}`;
+
+      // 检查文件是否已存在（获取 SHA 用于覆盖）
+      let sha;
+      try { const r = await ghApi(`contents/${path}`, 'GET'); sha = r.sha; } catch (e) {}
+
+      await ghApi(`contents/${path}`, 'PUT', {
+        message: `Upload font: ${item.file.name}`,
+        content: pureBase64,
+        ...(sha ? { sha } : {})
+      });
+
+      // 本地注册字体
+      const fontId = item.file.name.replace(/\.(ttf|otf)$/i, '')
+                         .toLowerCase().replace(/[\s\-]+/g, '_');
+      if (!document.getElementById('ff-' + fontId)) {
+        const s = document.createElement('style');
+        s.id = 'ff-' + fontId;
+        s.textContent = `@font-face{font-family:'ff_${fontId}';src:url('${dataUrl}');}`;
+        document.head.appendChild(s);
+      }
+
+      // 更新 FONTS 数组
+      const existing = FONTS.find(f => f.id === fontId);
+      if (existing) {
+        existing.base64 = dataUrl; existing.file = path;
+      } else {
+        FONTS.push({
+          id: fontId,
+          name: item.file.name.replace(/\.(ttf|otf)$/i, ''),
+          style: '', tags: [], preview: '汉字预览',
+          file: path, desc: '', base64: dataUrl
+        });
+      }
+      saveFonts();
+      item.status = 'done';
+    } catch (e) {
+      console.error(e);
+      item.status = 'error';
+    }
+    renderQueue();
+  }
+
+  await pushFontsJson();
+  renderFontListAdmin();
+  renderTags();
+  renderCards();
+  btn.disabled = false;
+  btn.textContent = '开始上传到 GitHub 仓库';
+  toast('全部上传完成');
+}
+
+function fileToDataUrl(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+// ============================================================
+//  GitHub API
+// ============================================================
+async function ghApi(path, method = 'GET', body = null) {
+  const url  = `https://api.github.com/repos/${GH.user}/${GH.repo}/${path}`;
+  const opts = {
+    method,
+    headers: {
+      'Authorization': 'token ' + GH.token,
+      'Content-Type':  'application/json',
+      'Accept':        'application/vnd.github.v3+json'
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(url, opts);
+  if (!res.ok) { const txt = await res.text(); throw new Error(txt); }
+  return method === 'DELETE' ? null : res.json();
+}
+
+async function pushFontsJson() {
+  if (!GH.token || !GH.user || !GH.repo) return;
+  try {
+    // 去除 base64（只存元数据到仓库）
+    const exportFonts = FONTS.map(({ base64, ...rest }) => rest);
+    const content = btoa(unescape(encodeURIComponent(
+      JSON.stringify(exportFonts, null, 2)
+    )));
+    let sha;
+    try { const f = await ghApi('contents/fonts.json', 'GET'); sha = f.sha; } catch (e) {}
+    await ghApi('contents/fonts.json', 'PUT', {
+      message: 'Update fonts.json',
+      content,
+      ...(sha ? { sha } : {})
+    });
+  } catch (e) { console.warn('fonts.json sync failed:', e); }
+}
+
+// ============================================================
+//  管理后台：GitHub 设置
+// ============================================================
+function loadGhFields() {
+  document.getElementById('ghUser').value  = GH.user  || '';
+  document.getElementById('ghRepo').value  = GH.repo  || '';
+  document.getElementById('ghToken').value = GH.token || '';
+  document.getElementById('newPwd').value  = '';
+}
+function saveGhSettings() {
+  GH = {
+    user:  document.getElementById('ghUser').value.trim(),
+    repo:  document.getElementById('ghRepo').value.trim(),
+    token: document.getElementById('ghToken').value.trim()
+  };
+  localStorage.setItem('gh_config', JSON.stringify(GH));
+  const np = document.getElementById('newPwd').value;
+  if (np) { ADMIN_PWD = np; localStorage.setItem('admin_pwd', np); }
+  showGhStatus('ok', '设置已保存到本地浏览器（Token 不会上传到任何服务器）');
+  toast('设置已保存');
+}
+async function testGhConnection() {
+  const user  = document.getElementById('ghUser').value.trim();
+  const repo  = document.getElementById('ghRepo').value.trim();
+  const token = document.getElementById('ghToken').value.trim();
+  if (!user || !repo || !token) { showGhStatus('err', '请填写完整的用户名、仓库名和 Token'); return; }
+  showGhStatus('info', '连接测试中…');
+  try {
+    const res = await fetch(`https://api.github.com/repos/${user}/${repo}`, {
+      headers: { 'Authorization': 'token ' + token }
+    });
+    if (res.ok) {
+      const d = await res.json();
+      showGhStatus('ok', `连接成功：${d.full_name}（${d.private ? '私有' : '公开'}仓库）`);
+    } else {
+      const e = await res.json();
+      showGhStatus('err', '连接失败：' + e.message);
+    }
+  } catch (e) {
+    showGhStatus('err', '网络错误：' + e.message);
+  }
+}
+function showGhStatus(type, msg) {
+  const el = document.getElementById('ghStatus');
+  el.className = 'gh-status ' + type;
+  el.textContent = msg;
+}
+
+// ============================================================
+//  初始化
+// ============================================================
+renderTags();
+renderCards();
+</script>
+</body>
+</html>
