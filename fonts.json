@@ -1,11 +1,12 @@
 [
   {
     "id": "中山篆1",
-    "name": "中山篆1",
-    "style": "",
+    "name": "中山篆",
+    "style": "篆书",
     "tags": [],
     "preview": "汉字预览",
     "file": "fonts/中山篆1.ttf",
-    "desc": ""
+    "desc": "",
+    "_ffRegistered": true
   }
 ]
