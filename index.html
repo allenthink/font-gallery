@@ -492,8 +492,21 @@ footer {
 // ============================================================
 //  状态
 // ============================================================
+// ============================================================
+//  ★ 部署前修改这两行为你自己的 GitHub 用户名和仓库名 ★
+// ============================================================
+const SITE_USER = 'allenthink';   // ← 改成你的 GitHub 用户名
+const SITE_REPO = 'font-gallery';           // ← 改成你的仓库名
+// ============================================================
+
 let FONTS      = JSON.parse(localStorage.getItem('fonts_data') || '[]');
-let GH         = JSON.parse(localStorage.getItem('gh_config')  || '{}');
+// GH：管理员配置（含 Token），普通访客没有 Token 也没关系
+const _ghStored = JSON.parse(localStorage.getItem('gh_config') || '{}');
+let GH = {
+  user:  _ghStored.user  || SITE_USER,
+  repo:  _ghStored.repo  || SITE_REPO,
+  token: _ghStored.token || ''
+};
 let ADMIN_PWD  = localStorage.getItem('admin_pwd') || 'admin123';
 let activeTag  = null;
 let previewText = '';
@@ -688,88 +701,105 @@ function resizeCard(id, size) {
 async function downloadFont(id) {
   const font = FONTS.find(f => f.id === id);
   if (!font) return;
+
   // 获取当前预览文字
   const card = document.querySelector(`[data-id="${id}"]`);
-  const text = card
-    ? (card.querySelector('.detail-input')?.value || card.querySelector('.preview-text')?.textContent || font.preview || font.name)
-    : (font.preview || font.name);
-  if (!text.trim()) { toast('请先输入要下载的文字'); return; }
+  const text = (card?.querySelector('.detail-input')?.value
+    || card?.querySelector('.preview-text')?.textContent
+    || font.preview || font.name || '').trim();
+  if (!text) { toast('请先输入要下载的文字'); return; }
 
-  toast('正在生成图片…');
+  toast('正在生成高清图片…');
 
-  // 确保字体已加载
+  // 确保字体已加载（FontFace API 强制等待）
   const ffName = `ff_${font.id}`;
-  let fontLoaded = !!font.base64;
-  if (!fontLoaded && GH.user && GH.repo && font.file) {
-    // 用 GitHub raw URL 加载字体
-    const url = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/main/${font.file}`;
+  let fontLoaded = false;
+
+  if (font.base64) {
     try {
-      const ff = new FontFace(ffName, `url('${url}')`);
+      const ff = new FontFace(ffName, `url('${font.base64}')`);
       await ff.load();
       document.fonts.add(ff);
       fontLoaded = true;
-    } catch(e) { console.warn('font load failed', e); }
+    } catch(e) { console.warn(e); }
+  } else if (GH.user && GH.repo && font.file) {
+    const rawUrl = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/main/${font.file}`;
+    try {
+      const ff = new FontFace(ffName, `url('${rawUrl}')`);
+      await ff.load();
+      document.fonts.add(ff);
+      fontLoaded = true;
+    } catch(e) { console.warn(e); }
   }
 
-  // Canvas 渲染
-  const fontSize = 96;
-  const padding  = 48;
-  const lineH    = fontSize * 1.4;
-  // 按行拆分（支持换行符）
-  const lines = text.split(/\n/).filter(l => l.length > 0);
+  // 参数：逻辑尺寸
+  const DPR      = 4;           // 4倍分辨率，输出约 4× 物理像素
+  const fontSize = 120;         // 逻辑字号
+  const padding  = 60;
+  const lineH    = fontSize * 1.5;
+  const fontFamily = fontLoaded ? `'${ffName}', serif` : `'Noto Serif SC', serif`;
+  const lines    = text.split(/[\n\r]+/).filter(l => l.trim().length > 0);
 
-  const canvas  = document.createElement('canvas');
-  const ctx     = canvas.getContext('2d');
-  const fontStr = fontLoaded ? `${fontSize}px '${ffName}', serif` : `${fontSize}px 'Noto Serif SC', serif`;
-  ctx.font = fontStr;
-
-  // 测量最长行宽
+  // 先用临时 canvas 测量文字宽度
+  const measure  = document.createElement('canvas');
+  const mctx     = measure.getContext('2d');
+  mctx.font      = `${fontSize * DPR}px ${fontFamily}`;
   let maxW = 0;
-  lines.forEach(l => { const m = ctx.measureText(l); if (m.width > maxW) maxW = m.width; });
+  lines.forEach(l => { const w = mctx.measureText(l).width; if (w > maxW) maxW = w; });
 
-  canvas.width  = Math.ceil(maxW) + padding * 2;
-  canvas.height = Math.ceil(lines.length * lineH) + padding * 2;
+  // 实际 canvas 尺寸（物理像素）
+  const logicW   = Math.ceil(maxW / DPR) + padding * 2;
+  const logicH   = lines.length * lineH + padding * 2;
+  const canvas   = document.createElement('canvas');
+  canvas.width   = logicW  * DPR;
+  canvas.height  = logicH  * DPR;
+  const ctx      = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
 
   // 背景：宣纸色
   ctx.fillStyle = '#f7f3eb';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, logicW, logicH);
 
-  // 淡网格
-  ctx.strokeStyle = 'rgba(26,20,9,0.06)';
-  ctx.lineWidth = 0.5;
+  // 淡网格底纹
+  ctx.strokeStyle = 'rgba(26,20,9,0.055)';
+  ctx.lineWidth   = 0.5;
   const step = 40;
-  for (let x = 0; x < canvas.width; x += step) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
-  for (let y = 0; y < canvas.height; y += step) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
+  for (let x = 0; x <= logicW; x += step) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, logicH); ctx.stroke();
+  }
+  for (let y = 0; y <= logicH; y += step) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(logicW, y); ctx.stroke();
+  }
 
-  // 顶部红色细线
+  // 顶部红线
   ctx.fillStyle = '#c0392b';
-  ctx.fillRect(0, 0, canvas.width, 3);
+  ctx.fillRect(0, 0, logicW, 4);
 
-  // 文字
-  ctx.font = fontStr;
-  ctx.fillStyle = '#1a1409';
-  ctx.textAlign = 'center';
+  // 主文字（抗锯齿已由 Canvas 默认开启）
+  ctx.font         = `${fontSize}px ${fontFamily}`;
+  ctx.fillStyle    = '#1a1409';
+  ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   lines.forEach((line, i) => {
-    ctx.fillText(line, canvas.width / 2, padding + i * lineH + lineH / 2);
+    ctx.fillText(line, logicW / 2, padding + i * lineH + lineH / 2);
   });
 
-  // 右下角水印
-  ctx.font = `12px 'Noto Serif SC', serif`;
-  ctx.fillStyle = 'rgba(26,20,9,0.25)';
-  ctx.textAlign = 'right';
+  // 右下角字体名水印
+  ctx.font         = `14px 'Noto Serif SC', serif`;
+  ctx.fillStyle    = 'rgba(26,20,9,0.22)';
+  ctx.textAlign    = 'right';
   ctx.textBaseline = 'bottom';
-  ctx.fillText(font.name, canvas.width - 12, canvas.height - 10);
+  ctx.fillText(font.name, logicW - 14, logicH - 12);
 
-  // 下载
+  // 导出高质量 PNG
   canvas.toBlob(blob => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `${text.slice(0,8)}_${font.name}.png`;
+    a.download = `${text.slice(0, 10)}_${font.name}.png`;
     a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    toast('图片已下载');
-  }, 'image/png');
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    toast('高清图片已下载');
+  }, 'image/png', 1.0);
 }
 function doSearch() {
   previewText = '';
@@ -1112,9 +1142,12 @@ function showGhStatus(type, msg) {
 //  初始化：页面加载时从 GitHub 同步 fonts.json
 // ============================================================
 async function loadFontsFromGitHub() {
-  if (!GH.user || !GH.repo) return;
+  // 用硬编码的 SITE_USER/SITE_REPO，任何访客都能加载，不依赖 localStorage
+  const user = GH.user || SITE_USER;
+  const repo = GH.repo || SITE_REPO;
+  if (!user || !repo || user === 'your-github-username') return;
   try {
-    const url = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/main/fonts.json`;
+    const url = `https://raw.githubusercontent.com/${user}/${repo}/main/fonts.json`;
     const res = await fetch(url + '?t=' + Date.now());
     if (!res.ok) return;
     const remote = await res.json();
@@ -1128,7 +1161,7 @@ async function loadFontsFromGitHub() {
     // 为有 file 但无 base64 的字体注册 @font-face（GitHub raw URL 直接渲染）
     FONTS.forEach(font => {
       if (font.file && !font.base64 && !document.getElementById('ff-' + font.id)) {
-        const rawUrl = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/main/${font.file}`;
+        const rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/main/${font.file}`;
         const s = document.createElement('style');
         s.id = 'ff-' + font.id;
         s.textContent = `@font-face{font-family:'ff_${font.id}';src:url('${rawUrl}');}`;
