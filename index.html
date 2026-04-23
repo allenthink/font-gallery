@@ -639,7 +639,7 @@ function renderCards() {
       s.textContent = `@font-face{font-family:'ff_${font.id}';src:url('${font.base64}');}`;
       document.head.appendChild(s);
     } else if (!font.base64 && font.file && GH.user && GH.repo && !document.getElementById('ff-' + font.id)) {
-      const rawUrl = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/main/${font.file}`;
+      const rawUrl = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/main/${font.file.split('/').map(encodeURIComponent).join('/')}`;
       const s = document.createElement('style');
       s.id = 'ff-' + font.id;
       s.textContent = `@font-face{font-family:'ff_${font.id}';src:url('${rawUrl}');}`;
@@ -723,7 +723,7 @@ async function downloadFont(id) {
       fontLoaded = true;
     } catch(e) { console.warn(e); }
   } else if (GH.user && GH.repo && font.file) {
-    const rawUrl = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/main/${font.file}`;
+    const rawUrl = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/main/${font.file.split('/').map(encodeURIComponent).join('/')}`;
     try {
       const ff = new FontFace(ffName, `url('${rawUrl}')`);
       await ff.load();
@@ -1161,7 +1161,7 @@ async function loadFontsFromGitHub() {
     // 为有 file 但无 base64 的字体注册 @font-face（GitHub raw URL 直接渲染）
     FONTS.forEach(font => {
       if (font.file && !font.base64 && !document.getElementById('ff-' + font.id)) {
-        const rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/main/${font.file}`;
+        const rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/main/${font.file.split('/').map(encodeURIComponent).join('/')}`;
         const s = document.createElement('style');
         s.id = 'ff-' + font.id;
         s.textContent = `@font-face{font-family:'ff_${font.id}';src:url('${rawUrl}');}`;
