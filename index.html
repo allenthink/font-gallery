@@ -619,14 +619,21 @@ function renderCards() {
     card.dataset.id = font.id;
     card.style.animationDelay = (i * 0.07) + 's';
 
-    // 注入字体 @font-face（若有 base64）
+    // 注入字体 @font-face（base64 优先，其次 GitHub raw URL）
     if (font.base64 && !document.getElementById('ff-' + font.id)) {
       const s = document.createElement('style');
       s.id = 'ff-' + font.id;
       s.textContent = `@font-face{font-family:'ff_${font.id}';src:url('${font.base64}');}`;
       document.head.appendChild(s);
+    } else if (!font.base64 && font.file && GH.user && GH.repo && !document.getElementById('ff-' + font.id)) {
+      const rawUrl = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/main/${font.file}`;
+      const s = document.createElement('style');
+      s.id = 'ff-' + font.id;
+      s.textContent = `@font-face{font-family:'ff_${font.id}';src:url('${rawUrl}');}`;
+      document.head.appendChild(s);
     }
-    const ffStyle = font.base64 ? `font-family:'ff_${font.id}',serif` : '';
+    const ffStyle = (font.base64 || (font.file && GH.user && GH.repo))
+      ? `font-family:'ff_${font.id}',serif` : '';
 
     card.innerHTML = `
       <div class="card-header">
@@ -642,7 +649,7 @@ function renderCards() {
             `<span class="mini-tag">${escHtml(t)}</span>`).join('')}
         </div>
         <button class="dl-btn"
-          onclick="event.stopPropagation();downloadFont('${font.id}')">下载字体</button>
+          onclick="event.stopPropagation();downloadFont('${font.id}')">下载图片</button>
       </div>
       <div class="card-detail" id="detail-${font.id}">
         <input class="detail-input" placeholder="在此输入文字实时预览…"
@@ -678,22 +685,91 @@ function resizeCard(id, size) {
     document.getElementById('size-' + id).textContent = size + 'px';
   }
 }
-function downloadFont(id) {
+async function downloadFont(id) {
   const font = FONTS.find(f => f.id === id);
   if (!font) return;
-  if (font.base64) {
-    const a = document.createElement('a');
-    a.href = font.base64;
-    a.download = (font.file || id + '.ttf').split('/').pop();
-    a.click();
-  } else if (GH.user && GH.repo && font.file) {
-    window.open(
-      `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/main/${font.file}`,
-      '_blank'
-    );
-  } else {
-    toast('字体文件尚未上传，请在管理后台上传');
+  // 获取当前预览文字
+  const card = document.querySelector(`[data-id="${id}"]`);
+  const text = card
+    ? (card.querySelector('.detail-input')?.value || card.querySelector('.preview-text')?.textContent || font.preview || font.name)
+    : (font.preview || font.name);
+  if (!text.trim()) { toast('请先输入要下载的文字'); return; }
+
+  toast('正在生成图片…');
+
+  // 确保字体已加载
+  const ffName = `ff_${font.id}`;
+  let fontLoaded = !!font.base64;
+  if (!fontLoaded && GH.user && GH.repo && font.file) {
+    // 用 GitHub raw URL 加载字体
+    const url = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/main/${font.file}`;
+    try {
+      const ff = new FontFace(ffName, `url('${url}')`);
+      await ff.load();
+      document.fonts.add(ff);
+      fontLoaded = true;
+    } catch(e) { console.warn('font load failed', e); }
   }
+
+  // Canvas 渲染
+  const fontSize = 96;
+  const padding  = 48;
+  const lineH    = fontSize * 1.4;
+  // 按行拆分（支持换行符）
+  const lines = text.split(/\n/).filter(l => l.length > 0);
+
+  const canvas  = document.createElement('canvas');
+  const ctx     = canvas.getContext('2d');
+  const fontStr = fontLoaded ? `${fontSize}px '${ffName}', serif` : `${fontSize}px 'Noto Serif SC', serif`;
+  ctx.font = fontStr;
+
+  // 测量最长行宽
+  let maxW = 0;
+  lines.forEach(l => { const m = ctx.measureText(l); if (m.width > maxW) maxW = m.width; });
+
+  canvas.width  = Math.ceil(maxW) + padding * 2;
+  canvas.height = Math.ceil(lines.length * lineH) + padding * 2;
+
+  // 背景：宣纸色
+  ctx.fillStyle = '#f7f3eb';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 淡网格
+  ctx.strokeStyle = 'rgba(26,20,9,0.06)';
+  ctx.lineWidth = 0.5;
+  const step = 40;
+  for (let x = 0; x < canvas.width; x += step) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
+  for (let y = 0; y < canvas.height; y += step) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
+
+  // 顶部红色细线
+  ctx.fillStyle = '#c0392b';
+  ctx.fillRect(0, 0, canvas.width, 3);
+
+  // 文字
+  ctx.font = fontStr;
+  ctx.fillStyle = '#1a1409';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  lines.forEach((line, i) => {
+    ctx.fillText(line, canvas.width / 2, padding + i * lineH + lineH / 2);
+  });
+
+  // 右下角水印
+  ctx.font = `12px 'Noto Serif SC', serif`;
+  ctx.fillStyle = 'rgba(26,20,9,0.25)';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(font.name, canvas.width - 12, canvas.height - 10);
+
+  // 下载
+  canvas.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${text.slice(0,8)}_${font.name}.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast('图片已下载');
+  }, 'image/png');
 }
 function doSearch() {
   previewText = '';
@@ -1033,10 +1109,43 @@ function showGhStatus(type, msg) {
 }
 
 // ============================================================
-//  初始化
+//  初始化：页面加载时从 GitHub 同步 fonts.json
 // ============================================================
+async function loadFontsFromGitHub() {
+  if (!GH.user || !GH.repo) return;
+  try {
+    const url = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/main/fonts.json`;
+    const res = await fetch(url + '?t=' + Date.now());
+    if (!res.ok) return;
+    const remote = await res.json();
+    if (!Array.isArray(remote) || remote.length === 0) return;
+    // 合并：以 GitHub 数据为准，保留本地缓存的 base64
+    FONTS = remote.map(rf => {
+      const local = FONTS.find(f => f.id === rf.id);
+      return { ...rf, base64: local?.base64 || null };
+    });
+    saveFonts();
+    // 为有 file 但无 base64 的字体注册 @font-face（GitHub raw URL 直接渲染）
+    FONTS.forEach(font => {
+      if (font.file && !font.base64 && !document.getElementById('ff-' + font.id)) {
+        const rawUrl = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/main/${font.file}`;
+        const s = document.createElement('style');
+        s.id = 'ff-' + font.id;
+        s.textContent = `@font-face{font-family:'ff_${font.id}';src:url('${rawUrl}');}`;
+        document.head.appendChild(s);
+        font._ffRegistered = true;
+      }
+    });
+    renderTags();
+    renderCards();
+  } catch(e) {
+    console.warn('GitHub fonts.json 加载失败:', e);
+  }
+}
+
 renderTags();
 renderCards();
+loadFontsFromGitHub();
 </script>
 </body>
 </html>
